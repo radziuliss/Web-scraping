@@ -1,0 +1,139 @@
+### 
+**Web Scrape Text from ANY Website - Web Scraping in R (Part 1)**
+
+```{r}
+library(rvest)
+library(dplyr) 
+
+link = "https://www.imdb.com/search/title/?genres=crime&sort=user_rating,desc&title_type=feature&num_votes=25000,&pf_rd_m=A2FGELUUNOQJNL&pf_rd_p=94365f40-17a1-4450-9ea8-01159990ef7f&pf_rd_r=H6SXRY7XYD85NCBA0HCR&pf_rd_s=right-6&pf_rd_t=15506&pf_rd_i=top&ref_=chttp_gnr_6"
+
+page = read_html(link)
+
+name <- page |>
+  html_nodes(".lister-item-header a") |>
+  html_text()
+
+html_text(html_nodes(page, ".lister-item-header a"))
+
+year <- page |> 
+  html_nodes(".text-muted.unbold") |> 
+  html_text()
+
+rating <- page |> 
+  html_nodes(".ratings-imdb-rating strong") |> 
+  html_text()
+
+synopsis <- page |>
+  html_nodes(".ratings-bar + .text-muted") |>
+  html_text()
+
+```
+
+```{r}
+library(stringr)
+
+movie_url <- page |>
+  html_nodes(".lister-item-header a") |>
+  html_attr("href")
+
+movie_links <- paste("https://www.imdb.com", movie_url, sep="")
+
+get_cast <- function(movie_link) {
+  movie_page <- read_html(movie_link)
+  movie_cast <- movie_page |>
+      html_nodes('.ipc-sub-grid.ipc-sub-grid--page-span-2.ipc-sub-grid--wraps-at-above-l.ipc-shoveler__grid > div > div > a') |>
+      html_text() |>
+      paste(collapse = ", ")
+  return(movie_cast)
+}
+
+cast <- sapply(movie_links, FUN = get_cast)
+
+
+movies <- data.frame(name, year, rating, synopsis, cast, stringsAsFactors = FALSE)
+```
+
+```{r}
+
+get_cast1 <- function(movie_link1) {
+  movie_page1 <- read_html(movie_link1)
+  movie_cast1 <- movie_page1 |>
+    html_nodes('.ipc-sub-grid.ipc-sub-grid–page-span-2.ipc-sub-grid–wraps-at-above-l.ipc-shoveler__grid > div > div > a') |>
+    html_text() |>
+    paste(collapse = ", ")
+  return(movie_cast1)
+}
+
+movies1 <- data.frame()
+
+for (page_result in seq(from = 1, to = 51, by = 50)) {
+  link1 <- paste0("https://www.imdb.com/search/title/?title_type=feature&num_votes=25000,&genres=horror&sort=user_rating,desc&start=", 
+               page_result, "&ref_=adv_nxt")
+  page1 <- read_html(link1)
+  
+  movie_url1 <- page1 |> html_nodes(".lister-item-header a") |> html_attr("href")
+  movie_links1 <- paste("https://www.imdb.com", movie_url1, sep="")
+  
+  name1 <- page1 |> html_nodes(".lister-item-header a") |> html_text()
+  year1 <- page1 |>  html_nodes(".text-muted.unbold") |>  html_text()
+  rating1 <- page1 |>  html_nodes(".ratings-imdb-rating strong") |>  html_text()
+  synopsis1 <- page1 |> html_nodes(".ratings-bar + .text-muted") |> html_text()
+  
+  cast1 <- sapply(movie_links1, FUN = get_cast1, USE.NAMES = FALSE)
+  
+  movies2 <- rbind(movies1, data.frame(name1, year1, rating1, synopsis1, cast1, stringsAsFactors = FALSE))
+  
+  print(paste("Page:", page_result))
+}               
+```
+
+```{r}
+    # paste0() and paste()
+    # and we know that paste by default adds space between all the text and we'd have to add this sep equals quotes 
+    # alternatively you can just use the paste zero command which by default will get rid of spaces between the strings that you're trying to concatenate
+
+    # So right now if I run all this code and I output movies it would actually only
+    #output the last 50 results so the second page of movies
+    #That's not exactly what we want. We're gonna need to create movies1 data.frame,
+    # that will just be empty
+    # and then instead of overwriting it each time by strictly setting it equal to a data frame
+    # we're gonna to use the r bind function which means row bind and it'll take first argument will be movies1,
+    # and the second argument will actually stay this data frame
+```
+
+```{r}
+library(rvest)
+library(dplyr)
+library(magrittr)
+# The value of $100 captures how much 100 George Washingtons are worth in the state.
+# If the value of a dollar drops below $100, then it does not go as far in that state. 
+# This data was compiled in February 2022.  
+
+col_link <- "https://www.patriotsoftware.com/blog/accounting/average-cost-living-by-state/"
+
+col_page <- read_html(col_link)
+
+
+col_table <- col_page |>
+  html_nodes("table.has-fixed-layout") |>
+  html_table() |>
+  extract2(1) #.[[1]]
+
+#One way to fix this error is to use the magrittr::extract2() function instead of the [[]] operator to extract the first element of the list.
+#You can do this by replacing .[[1]] with magrittr::extract2(1)
+
+wiki_link <- "https://en.wikipedia.org/wiki/List_of_apple_cultivars"
+
+wiki <- read_html(wiki_link)
+
+ col_wiki_apple <- wiki |>
+  html_nodes("table.wikitable.sortable.jquery-tablesorter") |>
+  html_table() # show nothing
+
+col_wiki_apple <- wiki |>
+  html_nodes("table") %>%
+  .[28] |>  #choose second vectors
+  html_table() %>%
+  .[[1]]
+View(col_wiki_apple)
+```
